@@ -55,6 +55,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/blogs" element={<BlogList />} />
+        <Route path="/categories" element={<BlogList />} />
         <Route path="/blog/:slug" element={<BlogDetail />} />
         <Route path="/about" element={<About />} />
         <Route path="/admin/login" element={<AdminPlaceholder />} />

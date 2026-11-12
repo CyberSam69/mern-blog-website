@@ -62,9 +62,31 @@ export default function BlogDetail() {
   }, [post]);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 3000);
+      }).catch(() => {
+        fallbackCopy();
+      });
+    } else {
+      fallbackCopy();
+    }
+  };
+
+  const fallbackCopy = () => {
+    try {
+      const input = document.createElement('input');
+      input.value = window.location.href;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      // ignore
+    }
   };
 
   const handleShareTwitter = () => {
@@ -76,6 +98,10 @@ export default function BlogDetail() {
   const handleShareLinkedIn = () => {
     const url = encodeURIComponent(window.location.href);
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80';
   };
 
   if (!post) {
@@ -141,10 +167,15 @@ export default function BlogDetail() {
             {/* Author bar & Social share */}
             <div className="article-author-share-bar">
               <div className="author-detail-block">
-                <img src={post.author.avatar} alt={post.author.name} className="author-detail-avatar" />
+                <img
+                  src={post.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                  alt={post.author?.name || 'FlyerTech Author'}
+                  className="author-detail-avatar"
+                  onError={handleImageError}
+                />
                 <div className="author-detail-text">
-                  <span className="author-detail-name">{post.author.name}</span>
-                  <span className="author-detail-role">{post.author.role}</span>
+                  <span className="author-detail-name">{post.author?.name || 'FlyerTech Editorial'}</span>
+                  <span className="author-detail-role">{post.author?.role || 'Staff Writer'}</span>
                 </div>
               </div>
 
@@ -186,7 +217,12 @@ export default function BlogDetail() {
 
         {/* Featured Image */}
         <div className="container article-hero-image-wrap">
-          <img src={post.featuredImage} alt={post.title} className="article-featured-image" />
+          <img
+            src={post.featuredImage}
+            alt={post.title}
+            className="article-featured-image"
+            onError={handleImageError}
+          />
         </div>
 
         {/* Main Article Body + Table of Contents Layout */}
@@ -212,11 +248,16 @@ export default function BlogDetail() {
 
             {/* Author Bio Box */}
             <div className="author-bio-card">
-              <img src={post.author.avatar} alt={post.author.name} className="bio-avatar" />
+              <img
+                src={post.author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                alt={post.author?.name || 'FlyerTech Author'}
+                className="bio-avatar"
+                onError={handleImageError}
+              />
               <div className="bio-text">
                 <span className="bio-written">Written by</span>
-                <h4 className="bio-name">{post.author.name}</h4>
-                <p className="bio-role">{post.author.role} at FlyerTech Editorial</p>
+                <h4 className="bio-name">{post.author?.name || 'FlyerTech Editorial'}</h4>
+                <p className="bio-role">{post.author?.role || 'Staff Writer'} at FlyerTech Editorial</p>
                 <p className="bio-desc">
                   Specializing in distributed systems, resilient cloud infrastructure, and enterprise software engineering practices.
                 </p>
@@ -316,3 +357,4 @@ export default function BlogDetail() {
     </Layout>
   );
 }
+

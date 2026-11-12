@@ -23,11 +23,22 @@ export default function ArticleCard({
     readTime,
   } = post;
 
-  const formattedDate = new Date(publishedAt).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const authorName = author?.name || 'FlyerTech Editorial';
+  const authorRole = author?.role || 'Staff Writer';
+  const authorAvatar = author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+
+  const formattedDate = publishedAt
+    ? new Date(publishedAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Recent';
+
+  // Fallback image handler
+  const handleImageError = (e) => {
+    e.target.src = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80';
+  };
 
   // Variant: Compact (Sidebar / Trending List)
   if (variant === 'compact') {
@@ -46,9 +57,9 @@ export default function ArticleCard({
             </Link>
           </h4>
           <div className="compact-footer">
-            <span className="author-name-sm">{author.name}</span>
+            <span className="author-name-sm">{authorName}</span>
             <span className="meta-dot">•</span>
-            <span className="read-time-sm">{readTime}</span>
+            <span className="read-time-sm">{readTime || '5 min read'}</span>
           </div>
         </div>
       </article>
@@ -61,7 +72,13 @@ export default function ArticleCard({
       <article className={`article-card card-hero ${className}`}>
         <div className="hero-image-wrap">
           <Link to={`/blog/${slug}`} tabIndex={-1}>
-            <img src={featuredImage} alt={title} className="hero-image" loading="eager" />
+            <img
+              src={featuredImage}
+              alt={title}
+              className="hero-image"
+              loading="eager"
+              onError={handleImageError}
+            />
           </Link>
         </div>
         <div className="hero-content">
@@ -75,7 +92,7 @@ export default function ArticleCard({
             </span>
             <span className="meta-item">
               <Icon name="clock" size={14} color="var(--text-secondary)" />
-              <span>{readTime}</span>
+              <span>{readTime || '5 min read'}</span>
             </span>
           </div>
 
@@ -88,10 +105,10 @@ export default function ArticleCard({
           <p className="hero-excerpt">{excerpt}</p>
 
           <div className="card-author-block">
-            <img src={author.avatar} alt={author.name} className="author-avatar" />
+            <img src={authorAvatar} alt={authorName} className="author-avatar" onError={handleImageError} />
             <div className="author-info">
-              <span className="author-name">{author.name}</span>
-              <span className="author-role">{author.role}</span>
+              <span className="author-name">{authorName}</span>
+              <span className="author-role">{authorRole}</span>
             </div>
           </div>
         </div>
@@ -105,7 +122,13 @@ export default function ArticleCard({
       <article className={`article-card card-horizontal ${className}`}>
         <div className="horizontal-image-wrap">
           <Link to={`/blog/${slug}`} tabIndex={-1}>
-            <img src={featuredImage} alt={title} className="horizontal-image" loading="lazy" />
+            <img
+              src={featuredImage}
+              alt={title}
+              className="horizontal-image"
+              loading="lazy"
+              onError={handleImageError}
+            />
           </Link>
         </div>
         <div className="horizontal-content">
@@ -115,7 +138,7 @@ export default function ArticleCard({
             </Link>
             <span className="meta-text">{formattedDate}</span>
             <span className="meta-dot">•</span>
-            <span className="meta-text">{readTime}</span>
+            <span className="meta-text">{readTime || '5 min read'}</span>
           </div>
 
           <h3 className="horizontal-title">
@@ -127,8 +150,8 @@ export default function ArticleCard({
           <p className="card-excerpt">{excerpt}</p>
 
           <div className="card-author-block">
-            <img src={author.avatar} alt={author.name} className="author-avatar-sm" />
-            <span className="author-name-sm">{author.name}</span>
+            <img src={authorAvatar} alt={authorName} className="author-avatar-sm" onError={handleImageError} />
+            <span className="author-name-sm">{authorName}</span>
           </div>
         </div>
       </article>
@@ -140,7 +163,13 @@ export default function ArticleCard({
     <article className={`article-card card-default ${className}`}>
       <div className="card-image-wrap">
         <Link to={`/blog/${slug}`} tabIndex={-1}>
-          <img src={featuredImage} alt={title} className="card-image" loading="lazy" />
+          <img
+            src={featuredImage}
+            alt={title}
+            className="card-image"
+            loading="lazy"
+            onError={handleImageError}
+          />
         </Link>
       </div>
 
@@ -162,17 +191,18 @@ export default function ArticleCard({
 
         <div className="card-footer">
           <div className="card-author-block">
-            <img src={author.avatar} alt={author.name} className="author-avatar-sm" />
+            <img src={authorAvatar} alt={authorName} className="author-avatar-sm" onError={handleImageError} />
             <div className="author-text">
-              <span className="author-name-sm">{author.name}</span>
+              <span className="author-name-sm">{authorName}</span>
             </div>
           </div>
           <span className="read-time-pill">
             <Icon name="clock" size={12} color="var(--text-light)" />
-            <span>{readTime}</span>
+            <span>{readTime || '5 min read'}</span>
           </span>
         </div>
       </div>
     </article>
   );
 }
+
