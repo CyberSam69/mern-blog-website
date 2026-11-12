@@ -213,3 +213,4 @@ export const uploadImage = async (file) => {
   });
   return response.data;
 };
+

@@ -11,17 +11,17 @@ const {
 } = require('../controllers/postController');
 const { protect, authorize } = require('../middleware/auth');
 
-// Public routes
-router.get('/', getPosts);
-router.get('/slug/:slug', getPostBySlug);
-router.get('/:slug', getPostBySlug);
-
-// Admin protected routes
+// Admin protected routes (MUST be declared before parameterized /:slug route)
 router.get('/admin/all', protect, authorize('admin'), getAllPostsAdmin);
 router.get('/admin/post/:id', protect, authorize('admin'), getPostByIdAdmin);
 router.post('/', protect, authorize('admin'), createPost);
 router.put('/:id', protect, authorize('admin'), updatePost);
 router.delete('/:id', protect, authorize('admin'), deletePost);
+
+// Public routes
+router.get('/', getPosts);
+router.get('/slug/:slug', getPostBySlug);
+router.get('/:slug', getPostBySlug);
 
 module.exports = router;
 
