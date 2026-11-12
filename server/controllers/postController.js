@@ -20,7 +20,14 @@ exports.getPosts = async (req, res) => {
   try {
     const { category, search, tag, sort = 'latest', page = 1, limit = 9 } = req.query;
 
-    const query = { status: 'published' };
+    const now = new Date();
+    // Only fetch published posts or scheduled posts whose scheduled date has arrived
+    const query = {
+      $or: [
+        { status: 'published' },
+        { status: 'scheduled', scheduledFor: { $lte: now } },
+      ],
+    };
 
     // Filter by category slug
     if (category && category !== 'all') {
@@ -31,6 +38,7 @@ exports.getPosts = async (req, res) => {
         return res.status(200).json({
           success: true,
           count: 0,
+          total: 0,
           totalPages: 0,
           currentPage: Number(page),
           data: [],
@@ -92,9 +100,13 @@ exports.getPosts = async (req, res) => {
 // @access  Public
 exports.getPostBySlug = async (req, res) => {
   try {
+    const now = new Date();
     const post = await Post.findOne({
       slug: req.params.slug,
-      status: 'published',
+      $or: [
+        { status: 'published' },
+        { status: 'scheduled', scheduledFor: { $lte: now } },
+      ],
     })
       .populate('category', 'name slug description')
       .populate('author', 'name role bio avatar socialLinks')
@@ -105,14 +117,17 @@ exports.getPostBySlug = async (req, res) => {
     }
 
     // Increment view counter
-    post.views += 1;
+    post.views = (post.views || 0) + 1;
     await post.save();
 
     // Fetch related articles from the same category
     const relatedPosts = await Post.find({
       category: post.category._id,
       _id: { $ne: post._id },
-      status: 'published',
+      $or: [
+        { status: 'published' },
+        { status: 'scheduled', scheduledFor: { $lte: now } },
+      ],
     })
       .populate('category', 'name slug')
       .populate('author', 'name role avatar')
@@ -120,15 +135,21 @@ exports.getPostBySlug = async (req, res) => {
 
     // Fetch previous and next articles
     const prevPost = await Post.findOne({
-      status: 'published',
-      publishedAt: { $lt: post.publishedAt },
+      $or: [
+        { status: 'published' },
+        { status: 'scheduled', scheduledFor: { $lte: now } },
+      ],
+      publishedAt: { $lt: post.publishedAt || now },
     })
       .select('title slug')
       .sort({ publishedAt: -1 });
 
     const nextPost = await Post.findOne({
-      status: 'published',
-      publishedAt: { $gt: post.publishedAt },
+      $or: [
+        { status: 'published' },
+        { status: 'scheduled', scheduledFor: { $lte: now } },
+      ],
+      publishedAt: { $gt: post.publishedAt || now },
     })
       .select('title slug')
       .sort({ publishedAt: 1 });
@@ -350,3 +371,4 @@ exports.deletePost = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

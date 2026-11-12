@@ -1,38 +1,43 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import ArticleCard from '../../components/blog/ArticleCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import Icon from '../../components/common/Icon';
-import { MOCK_BLOGS } from '../../utils/mockBlogs';
+import { fetchArticleBySlug } from '../../utils/blogService';
 import './BlogDetail.css';
 
 export default function BlogDetail() {
   const { slug } = useParams();
-  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // Scroll to top on slug change
+  // Scroll to top and fetch post whenever slug changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    let isMounted = true;
+
+    async function loadPost() {
+      setLoading(true);
+      const res = await fetchArticleBySlug(slug);
+      if (isMounted) {
+        setData(res);
+        setLoading(false);
+      }
+    }
+
+    loadPost();
+    return () => {
+      isMounted = false;
+    };
   }, [slug]);
 
-  // Find post by slug
-  const postIndex = MOCK_BLOGS.findIndex((p) => p.slug === slug);
-  const post = postIndex !== -1 ? MOCK_BLOGS[postIndex] : null;
-
-  // Previous and next article navigation
-  const prevPost = postIndex > 0 ? MOCK_BLOGS[postIndex - 1] : null;
-  const nextPost = postIndex < MOCK_BLOGS.length - 1 ? MOCK_BLOGS[postIndex + 1] : null;
-
-  // Related articles (from same category or remaining posts)
-  const relatedPosts = useMemo(() => {
-    if (!post) return [];
-    return MOCK_BLOGS
-      .filter((p) => p.id !== post.id && (p.categorySlug === post.categorySlug || p.isTrending))
-      .slice(0, 3);
-  }, [post]);
+  const post = data?.article;
+  const relatedPosts = data?.relatedPosts || [];
+  const prevPost = data?.prevPost;
+  const nextPost = data?.nextPost;
 
   // Extract Table of Contents items from HTML headings
   const tocItems = useMemo(() => {
@@ -90,6 +95,7 @@ export default function BlogDetail() {
   };
 
   const handleShareTwitter = () => {
+    if (!post) return;
     const text = encodeURIComponent(`"${post.title}" via FlyerTech:`);
     const url = encodeURIComponent(window.location.href);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
@@ -104,10 +110,20 @@ export default function BlogDetail() {
     e.target.src = 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80';
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container" style={{ padding: 'var(--spacing-3xl) 0', textAlign: 'center', minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: 'var(--text-secondary)' }}>Loading technical article...</p>
+        </div>
+      </Layout>
+    );
+  }
+
   if (!post) {
     return (
       <Layout>
-        <div className="container" style={{ padding: 'var(--spacing-3xl) 0', textAlign: 'center' }}>
+        <div className="container" style={{ padding: 'var(--spacing-3xl) 0', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <h2>Article Not Found</h2>
           <p style={{ color: 'var(--text-secondary)', margin: 'var(--spacing-md) 0' }}>
             The requested article could not be located in our editorial archives.
@@ -120,11 +136,13 @@ export default function BlogDetail() {
     );
   }
 
-  const formattedDate = new Date(post.publishedAt).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  const formattedDate = post.publishedAt
+    ? new Date(post.publishedAt).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : 'Recent';
 
   return (
     <Layout>
@@ -259,7 +277,7 @@ export default function BlogDetail() {
                 <h4 className="bio-name">{post.author?.name || 'FlyerTech Editorial'}</h4>
                 <p className="bio-role">{post.author?.role || 'Staff Writer'} at FlyerTech Editorial</p>
                 <p className="bio-desc">
-                  Specializing in distributed systems, resilient cloud infrastructure, and enterprise software engineering practices.
+                  {post.author?.bio || 'Specializing in distributed systems, resilient cloud infrastructure, and enterprise software engineering practices.'}
                 </p>
               </div>
             </div>
@@ -347,7 +365,7 @@ export default function BlogDetail() {
 
               <div className="related-grid">
                 {relatedPosts.map((relPost) => (
-                  <ArticleCard key={relPost.id} post={relPost} variant="default" />
+                  <ArticleCard key={relPost.id || relPost._id} post={relPost} variant="default" />
                 ))}
               </div>
             </div>
@@ -357,4 +375,3 @@ export default function BlogDetail() {
     </Layout>
   );
 }
-

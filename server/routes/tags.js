@@ -8,3 +8,4 @@ router.post('/', protect, authorize('admin'), createTag);
 router.delete('/:id', protect, authorize('admin'), deleteTag);
 
 module.exports = router;
+

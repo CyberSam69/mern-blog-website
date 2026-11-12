@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import ArticleCard from '../../components/blog/ArticleCard';
 import Badge from '../../components/common/Badge';
@@ -7,8 +7,8 @@ import Button from '../../components/common/Button';
 import SearchBar from '../../components/common/SearchBar';
 import Pagination from '../../components/common/Pagination';
 import Icon from '../../components/common/Icon';
-import { CATEGORIES } from '../../utils/constants';
-import { MOCK_BLOGS } from '../../utils/mockBlogs';
+import { fetchArticles, fetchCategories } from '../../utils/blogService';
+import { CATEGORIES as DEFAULT_CATEGORIES } from '../../utils/constants';
 import './BlogList.css';
 
 const POSTS_PER_PAGE = 6;
@@ -20,10 +20,47 @@ export default function BlogList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState('latest'); // 'latest' | 'popular'
 
-  // Reset page when category or search changes
+  const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch categories once
   useEffect(() => {
-    setCurrentPage(1);
-  }, [currentCategory, currentSearch]);
+    async function loadCategories() {
+      const cats = await fetchCategories();
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    }
+    loadCategories();
+  }, []);
+
+  // Fetch articles whenever filter / sort / page changes
+  useEffect(() => {
+    let isMounted = true;
+    async function loadArticles() {
+      setLoading(true);
+      const res = await fetchArticles({
+        category: currentCategory,
+        search: currentSearch,
+        sort: sortBy,
+        page: currentPage,
+        limit: POSTS_PER_PAGE,
+      });
+      if (isMounted) {
+        setArticles(res.articles || []);
+        setTotal(res.total || 0);
+        setTotalPages(res.totalPages || 1);
+        setLoading(false);
+      }
+    }
+    loadArticles();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentCategory, currentSearch, sortBy, currentPage]);
 
   const handleCategorySelect = (slug) => {
     const params = new URLSearchParams(searchParams);
@@ -32,6 +69,8 @@ export default function BlogList() {
     } else {
       params.set('category', slug);
     }
+    params.delete('page');
+    setCurrentPage(1);
     setSearchParams(params);
   };
 
@@ -42,48 +81,17 @@ export default function BlogList() {
     } else {
       params.delete('search');
     }
+    params.delete('page');
+    setCurrentPage(1);
     setSearchParams(params);
   };
 
   const clearAllFilters = () => {
+    setCurrentPage(1);
     setSearchParams({});
   };
 
-  // Filter and sort articles
-  const filteredArticles = useMemo(() => {
-    return MOCK_BLOGS.filter((post) => {
-      // Category match
-      if (currentCategory !== 'all' && post.categorySlug !== currentCategory) {
-        return false;
-      }
-      // Search keyword match
-      if (currentSearch) {
-        const query = currentSearch.toLowerCase();
-        const inTitle = post.title.toLowerCase().includes(query);
-        const inExcerpt = post.excerpt.toLowerCase().includes(query);
-        const inCategory = post.category.toLowerCase().includes(query);
-        const inTags = post.tags?.some((t) => t.toLowerCase().includes(query));
-        if (!inTitle && !inExcerpt && !inCategory && !inTags) {
-          return false;
-        }
-      }
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === 'popular') {
-        return (b.views || 0) - (a.views || 0);
-      }
-      return new Date(b.publishedAt) - new Date(a.publishedAt);
-    });
-  }, [currentCategory, currentSearch, sortBy]);
-
-  // Paginated articles
-  const totalPages = Math.ceil(filteredArticles.length / POSTS_PER_PAGE);
-  const paginatedArticles = useMemo(() => {
-    const start = (currentPage - 1) * POSTS_PER_PAGE;
-    return filteredArticles.slice(start, start + POSTS_PER_PAGE);
-  }, [filteredArticles, currentPage]);
-
-  const activeCategoryObj = CATEGORIES.find((c) => c.slug === currentCategory);
+  const activeCategoryObj = categories.find((c) => c.slug === currentCategory);
 
   return (
     <Layout>
@@ -128,11 +136,11 @@ export default function BlogList() {
                   role="tab"
                   aria-selected={currentCategory === 'all'}
                 >
-                  All ({MOCK_BLOGS.length})
+                  All ({total || categories.reduce((sum, c) => sum + (c.count || 0), 0) || 7})
                 </button>
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
-                    key={cat.id}
+                    key={cat.id || cat._id}
                     type="button"
                     className={`cat-pill ${currentCategory === cat.slug ? 'active' : ''}`}
                     onClick={() => handleCategorySelect(cat.slug)}
@@ -150,7 +158,10 @@ export default function BlogList() {
                 <select
                   id="sort-select"
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="sort-select"
                 >
                   <option value="latest">Newest First</option>
@@ -207,12 +218,16 @@ export default function BlogList() {
             {/* Results count */}
             <div className="results-meta">
               <span className="results-count">
-                Showing <strong>{paginatedArticles.length}</strong> of <strong>{filteredArticles.length}</strong> articles
+                Showing <strong>{articles.length}</strong> of <strong>{total}</strong> articles
               </span>
             </div>
 
-            {/* Empty State */}
-            {filteredArticles.length === 0 ? (
+            {/* Loading / Empty / Content states */}
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-3xl) 0', color: 'var(--text-secondary)' }}>
+                Loading articles from archive...
+              </div>
+            ) : articles.length === 0 ? (
               <div className="empty-state-box">
                 <div className="empty-icon-wrap">
                   <Icon name="search" size={32} color="var(--text-light)" />
@@ -226,14 +241,14 @@ export default function BlogList() {
             ) : (
               /* Articles Grid */
               <div className="articles-grid-3col">
-                {paginatedArticles.map((post) => (
-                  <ArticleCard key={post.id} post={post} variant="default" />
+                {articles.map((post) => (
+                  <ArticleCard key={post.id || post._id} post={post} variant="default" />
                 ))}
               </div>
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {!loading && totalPages > 1 && (
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -249,4 +264,3 @@ export default function BlogList() {
     </Layout>
   );
 }
-

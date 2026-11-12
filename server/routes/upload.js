@@ -59,3 +59,4 @@ router.post('/', protect, authorize('admin'), upload.single('image'), (req, res)
 });
 
 module.exports = router;
+

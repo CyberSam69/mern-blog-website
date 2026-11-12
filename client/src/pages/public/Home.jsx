@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import ArticleCard from '../../components/blog/ArticleCard';
@@ -6,21 +6,46 @@ import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import SearchBar from '../../components/common/SearchBar';
 import Icon from '../../components/common/Icon';
-import { CATEGORIES } from '../../utils/constants';
-import { MOCK_BLOGS } from '../../utils/mockBlogs';
+import { fetchArticles, fetchCategories } from '../../utils/blogService';
+import { CATEGORIES as DEFAULT_CATEGORIES } from '../../utils/constants';
 import './Home.css';
 
 export default function Home() {
+  const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const featuredPosts = MOCK_BLOGS.filter((post) => post.isFeatured);
-  const primaryFeatured = featuredPosts[0] || MOCK_BLOGS[0];
-  const secondaryFeatured = featuredPosts.slice(1);
-  const trendingPosts = MOCK_BLOGS.filter((post) => post.isTrending);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      setLoading(true);
+      const [articlesRes, categoriesRes] = await Promise.all([
+        fetchArticles({ limit: 12 }),
+        fetchCategories(),
+      ]);
+      if (isMounted) {
+        setArticles(articlesRes.articles || []);
+        if (categoriesRes && categoriesRes.length > 0) {
+          setCategories(categoriesRes);
+        }
+        setLoading(false);
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const featuredPosts = articles.filter((post) => post.isFeatured);
+  const primaryFeatured = featuredPosts[0] || articles[0];
+  const secondaryFeatured = featuredPosts.slice(1, 3);
+  const trendingPosts = articles.filter((post) => post.isTrending);
 
   // Filter latest articles by selected category on the home page
-  const filteredLatest = MOCK_BLOGS.filter((post) => {
+  const filteredLatest = articles.filter((post) => {
     if (selectedCategory === 'all') return true;
     return post.categorySlug === selectedCategory;
   });
@@ -59,9 +84,9 @@ export default function Home() {
               <div className="quick-categories-row">
                 <span className="quick-label">Browse Topics:</span>
                 <div className="quick-pills">
-                  {CATEGORIES.slice(0, 5).map((cat) => (
+                  {categories.slice(0, 5).map((cat) => (
                     <Link
-                      key={cat.id}
+                      key={cat.id || cat._id}
                       to={`/blogs?category=${cat.slug}`}
                       className="quick-pill-link"
                     >
@@ -88,19 +113,27 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="featured-layout-grid">
-              {/* Primary Large Featured Card */}
-              <div className="primary-featured-col">
-                <ArticleCard post={primaryFeatured} variant="hero" />
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl) 0', color: 'var(--text-secondary)' }}>
+                Loading editorial content...
               </div>
+            ) : (
+              <div className="featured-layout-grid">
+                {/* Primary Large Featured Card */}
+                {primaryFeatured && (
+                  <div className="primary-featured-col">
+                    <ArticleCard post={primaryFeatured} variant="hero" />
+                  </div>
+                )}
 
-              {/* Secondary Featured Side Cards */}
-              <div className="secondary-featured-col">
-                {secondaryFeatured.map((post) => (
-                  <ArticleCard key={post.id} post={post} variant="default" />
-                ))}
+                {/* Secondary Featured Side Cards */}
+                <div className="secondary-featured-col">
+                  {secondaryFeatured.map((post) => (
+                    <ArticleCard key={post.id || post._id} post={post} variant="default" />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -127,9 +160,9 @@ export default function Home() {
                     >
                       All Domains
                     </button>
-                    {CATEGORIES.slice(0, 4).map((cat) => (
+                    {categories.slice(0, 4).map((cat) => (
                       <button
-                        key={cat.id}
+                        key={cat.id || cat._id}
                         type="button"
                         className={`filter-pill-btn ${selectedCategory === cat.slug ? 'active' : ''}`}
                         onClick={() => setSelectedCategory(cat.slug)}
@@ -143,16 +176,22 @@ export default function Home() {
                 </div>
 
                 {/* Articles Grid */}
-                <div className="latest-articles-grid">
-                  {filteredLatest.map((post) => (
-                    <ArticleCard key={post.id} post={post} variant="default" />
-                  ))}
-                </div>
+                {loading ? (
+                  <div style={{ textAlign: 'center', padding: 'var(--spacing-2xl) 0', color: 'var(--text-secondary)' }}>
+                    Loading articles...
+                  </div>
+                ) : (
+                  <div className="latest-articles-grid">
+                    {filteredLatest.map((post) => (
+                      <ArticleCard key={post.id || post._id} post={post} variant="default" />
+                    ))}
+                  </div>
+                )}
 
                 <div className="feed-footer-action">
                   <Link to="/blogs">
                     <Button variant="outline" size="lg" icon={<Icon name="arrow-right" size={16} />} iconPosition="right">
-                      Explore All Published Articles ({MOCK_BLOGS.length})
+                      Explore All Published Articles ({articles.length})
                     </Button>
                   </Link>
                 </div>
@@ -163,14 +202,12 @@ export default function Home() {
                 {/* Trending Section */}
                 <div className="sidebar-widget trending-widget">
                   <div className="widget-header">
-                    <h3 className="widget-title">
-                      Trending Articles
-                    </h3>
+                    <h3 className="widget-title">Trending Articles</h3>
                     <span className="widget-sub">Most read this week</span>
                   </div>
                   <div className="trending-list">
                     {trendingPosts.map((post, idx) => (
-                      <div key={post.id} className="trending-item-row">
+                      <div key={post.id || post._id} className="trending-item-row">
                         <span className="trending-rank">0{idx + 1}</span>
                         <ArticleCard post={post} variant="compact" />
                       </div>
@@ -182,14 +219,14 @@ export default function Home() {
                 <div className="sidebar-widget categories-widget">
                   <h3 className="widget-title">Domains & Topics</h3>
                   <div className="sidebar-category-list">
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <Link
-                        key={cat.id}
+                        key={cat.id || cat._id}
                         to={`/blogs?category=${cat.slug}`}
                         className="sidebar-category-row"
                       >
                         <span className="sidebar-cat-name">{cat.name}</span>
-                        <span className="sidebar-cat-badge">{cat.count}</span>
+                        <span className="sidebar-cat-badge">{cat.count || 0}</span>
                       </Link>
                     ))}
                   </div>
@@ -214,4 +251,3 @@ export default function Home() {
     </Layout>
   );
 }
-
