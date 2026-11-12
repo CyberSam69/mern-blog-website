@@ -22,3 +22,4 @@ export const COMPANY_INFO = {
   email: 'contact@flyertech.com',
   address: 'Technology Media Center, Innovation Parkway',
 };
+

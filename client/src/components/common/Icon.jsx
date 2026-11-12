@@ -126,3 +126,4 @@ export default function Icon({ name, size = 18, color = 'currentColor', classNam
       return null;
   }
 }
+

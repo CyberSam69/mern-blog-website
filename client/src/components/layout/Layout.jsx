@@ -14,3 +14,4 @@ export default function Layout({ children, showFooter = true }) {
     </div>
   );
 }
+
