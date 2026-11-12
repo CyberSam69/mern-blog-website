@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
+import SEO from '../../components/common/SEO';
 import ArticleCard from '../../components/blog/ArticleCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -260,6 +261,17 @@ export default function BlogDetail() {
 
   return (
     <Layout>
+      <SEO
+        title={post.seo?.metaTitle || post.title}
+        description={post.seo?.metaDescription || post.excerpt}
+        image={post.featuredImage}
+        type="article"
+        article={{
+          publishedAt: post.publishedAt,
+          authorName: post.author?.name,
+          tags: post.tags,
+        }}
+      />
       {/* Top Reading Progress Bar */}
       <div
         className="reading-progress-bar"

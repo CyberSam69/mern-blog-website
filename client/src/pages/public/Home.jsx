@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
+import SEO from '../../components/common/SEO';
 import ArticleCard from '../../components/blog/ArticleCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -58,6 +59,11 @@ export default function Home() {
 
   return (
     <Layout>
+      <SEO
+        title="FlyerTech - Enterprise Technology & Software Architecture Blog"
+        description="Curated technical articles on software development, cloud infrastructure, AI architecture, and cybersecurity. Written by practitioners for engineering leaders."
+        type="website"
+      />
       <div className="home-page">
         {/* Hero Banner Section */}
         <section className="home-hero">

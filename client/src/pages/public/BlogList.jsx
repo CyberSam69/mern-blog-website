@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
+import SEO from '../../components/common/SEO';
 import ArticleCard from '../../components/blog/ArticleCard';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -95,6 +96,20 @@ export default function BlogList() {
 
   return (
     <Layout>
+      <SEO
+        title={
+          activeCategoryObj
+            ? `${activeCategoryObj.name} Articles | FlyerTech`
+            : currentSearch
+            ? `Search: "${currentSearch}" | FlyerTech Articles`
+            : 'All Technology Articles | FlyerTech'
+        }
+        description={
+          activeCategoryObj
+            ? `In-depth articles, design patterns, and engineering guides for ${activeCategoryObj.name}.`
+            : 'Explore our full library of software architecture, cloud native, cybersecurity, and AI engineering articles.'
+        }
+      />
       <div className="blog-list-page">
         {/* Header Hero */}
         <section className="blog-list-header">

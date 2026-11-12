@@ -1,0 +1,15 @@
+# robots.txt for FlyerTech Blog Website
+User-agent: *
+Allow: /
+Allow: /blogs
+Allow: /blog/*
+Allow: /categories
+Allow: /about
+
+# Disallow CMS Admin management and internal API endpoints
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /api/*
+
+# XML Sitemap location
+Sitemap: https://flyertech.com/sitemap.xml

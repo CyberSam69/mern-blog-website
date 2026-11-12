@@ -13,6 +13,7 @@ const tagRoutes = require('./routes/tags');
 const authorRoutes = require('./routes/authors');
 const postRoutes = require('./routes/posts');
 const uploadRoutes = require('./routes/upload');
+const sitemapRoutes = require('./routes/sitemap');
 
 const app = express();
 
@@ -49,6 +50,13 @@ app.use('/api/tags', requireDatabase, tagRoutes);
 app.use('/api/authors', requireDatabase, authorRoutes);
 app.use('/api/posts', requireDatabase, postRoutes);
 app.use('/api/upload', requireDatabase, uploadRoutes);
+
+// XML Sitemap & Robots for Search Engine Crawlers
+app.use('/', sitemapRoutes);
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /admin/*\nDisallow: /api/*\n\nSitemap: ${process.env.CLIENT_URL || 'https://flyertech.com'}/sitemap.xml\n`);
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

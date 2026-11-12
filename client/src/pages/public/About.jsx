@@ -1,5 +1,6 @@
 import React from 'react';
 import Layout from '../../components/layout/Layout';
+import SEO from '../../components/common/SEO';
 import Badge from '../../components/common/Badge';
 import Icon from '../../components/common/Icon';
 import { COMPANY_INFO, CATEGORIES } from '../../utils/constants';
@@ -8,6 +9,10 @@ import './About.css';
 export default function About() {
   return (
     <Layout>
+      <SEO
+        title="About FlyerTech - Enterprise Technology & Engineering Editorial"
+        description="Learn about FlyerTech's editorial mission, technical coverage domains, and practitioner contributors."
+      />
       <div className="about-page">
         {/* Hero Section */}
         <section className="about-hero">
