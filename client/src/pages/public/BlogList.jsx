@@ -117,6 +117,7 @@ export default function BlogList() {
                   placeholder="Search articles by keyword, topic, or technology..."
                   initialValue={currentSearch}
                   onSearch={handleSearch}
+                  liveSearch={true}
                 />
               </div>
             </div>

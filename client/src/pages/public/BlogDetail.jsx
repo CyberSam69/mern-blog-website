@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import ArticleCard from '../../components/blog/ArticleCard';
@@ -13,8 +13,13 @@ export default function BlogDetail() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [codeCopiedIndex, setCodeCopiedIndex] = useState(null);
+  const [activeHeadingId, setActiveHeadingId] = useState('');
+  const [readingProgress, setReadingProgress] = useState(0);
 
-  // Scroll to top and fetch post whenever slug changes
+  const contentRef = useRef(null);
+
+  // Fetch article
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     let isMounted = true;
@@ -33,6 +38,20 @@ export default function BlogDetail() {
       isMounted = false;
     };
   }, [slug]);
+
+  // Reading progress scroll tracker
+  useEffect(() => {
+    const handleScroll = () => {
+      const el = document.documentElement;
+      const totalHeight = el.scrollHeight - el.clientHeight;
+      if (totalHeight > 0) {
+        const progress = Math.min(100, Math.max(0, (window.scrollY / totalHeight) * 100));
+        setReadingProgress(progress);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const post = data?.article;
   const relatedPosts = data?.relatedPosts || [];
@@ -65,6 +84,80 @@ export default function BlogDetail() {
       return `<h2 id="${id}">${title}</h2>`;
     });
   }, [post]);
+
+  // ScrollSpy using IntersectionObserver
+  useEffect(() => {
+    if (!contentRef.current || tocItems.length === 0) return;
+
+    const headings = contentRef.current.querySelectorAll('h2[id]');
+    if (headings.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveHeadingId(entry.target.id);
+          }
+        });
+      },
+      {
+        rootMargin: '-80px 0px -70% 0px',
+        threshold: 0.1,
+      }
+    );
+
+    headings.forEach((h) => observer.observe(h));
+    return () => observer.disconnect();
+  }, [processedContent, tocItems]);
+
+  // Add Copy Button to all <pre><code> blocks after mount
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const codeBlocks = contentRef.current.querySelectorAll('pre');
+
+    codeBlocks.forEach((pre, index) => {
+      if (pre.querySelector('.code-copy-btn')) return; // already added
+
+      pre.style.position = 'relative';
+
+      const btn = document.createElement('button');
+      btn.className = 'code-copy-btn';
+      btn.innerText = 'Copy';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Copy code block to clipboard');
+
+      btn.addEventListener('click', () => {
+        const codeText = pre.querySelector('code')?.innerText || pre.innerText;
+        navigator.clipboard.writeText(codeText).then(() => {
+          btn.innerText = 'Copied!';
+          setCodeCopiedIndex(index);
+          setTimeout(() => {
+            btn.innerText = 'Copy';
+            setCodeCopiedIndex(null);
+          }, 2500);
+        });
+      });
+
+      pre.appendChild(btn);
+    });
+  }, [processedContent]);
+
+  // Native Web Share API or Clipboard Copy
+  const handleNativeShare = async () => {
+    if (navigator.share && post) {
+      try {
+        await navigator.share({
+          title: post.title,
+          text: post.excerpt,
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // User cancelled or fell back
+      }
+    }
+    handleCopyLink();
+  };
 
   const handleCopyLink = () => {
     if (navigator?.clipboard?.writeText) {
@@ -146,6 +239,13 @@ export default function BlogDetail() {
 
   return (
     <Layout>
+      {/* Top Reading Progress Bar */}
+      <div
+        className="reading-progress-bar"
+        style={{ width: `${readingProgress}%` }}
+        aria-hidden="true"
+      />
+
       <div className="blog-detail-page">
         {/* Breadcrumb Navigation */}
         <div className="detail-breadcrumb-bar">
@@ -176,6 +276,10 @@ export default function BlogDetail() {
               <span className="meta-item">
                 <Icon name="clock" size={14} color="var(--text-secondary)" />
                 <span>{post.readTime}</span>
+              </span>
+              <span className="meta-item">
+                <Icon name="user" size={14} color="var(--text-secondary)" />
+                <span>{post.views || 0} views</span>
               </span>
             </div>
 
@@ -221,12 +325,12 @@ export default function BlogDetail() {
                 <button
                   type="button"
                   className="social-btn copy-btn"
-                  onClick={handleCopyLink}
-                  title="Copy link to clipboard"
-                  aria-label="Copy article link"
+                  onClick={handleNativeShare}
+                  title="Share or Copy Link"
+                  aria-label="Share article"
                 >
                   <Icon name="share" size={14} />
-                  <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+                  <span>{copied ? 'Copied!' : 'Share'}</span>
                 </button>
               </div>
             </div>
@@ -246,7 +350,7 @@ export default function BlogDetail() {
         {/* Main Article Body + Table of Contents Layout */}
         <div className="container article-body-layout">
           {/* Left / Center: Article Content */}
-          <article className="article-prose-container">
+          <article className="article-prose-container" ref={contentRef}>
             <div
               className="article-rich-content"
               dangerouslySetInnerHTML={{ __html: processedContent }}
@@ -316,13 +420,19 @@ export default function BlogDetail() {
               <div className="toc-card sticky-toc">
                 <h4 className="toc-title">Table of Contents</h4>
                 <ul className="toc-list">
-                  {tocItems.map((item, idx) => (
-                    <li key={idx}>
-                      <a href={`#${item.id}`} className="toc-link">
-                        {item.text}
-                      </a>
-                    </li>
-                  ))}
+                  {tocItems.map((item, idx) => {
+                    const isActive = activeHeadingId === item.id;
+                    return (
+                      <li key={idx}>
+                        <a
+                          href={`#${item.id}`}
+                          className={`toc-link ${isActive ? 'active' : ''}`}
+                        >
+                          {item.text}
+                        </a>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <div className="toc-divider" />
@@ -334,7 +444,7 @@ export default function BlogDetail() {
                     onClick={handleCopyLink}
                   >
                     <Icon name="share" size={14} />
-                    <span>{copied ? 'Link Copied!' : 'Share Article'}</span>
+                    <span>{copied ? 'Link Copied!' : 'Copy Article Link'}</span>
                   </button>
                   <button
                     type="button"

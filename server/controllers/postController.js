@@ -120,13 +120,21 @@ exports.getPostBySlug = async (req, res) => {
     post.views = (post.views || 0) + 1;
     await post.save();
 
-    // Fetch related articles from the same category
+    // Fetch related articles matching category or overlapping tags
+    const tagIds = Array.isArray(post.tags) ? post.tags.map((t) => t._id || t) : [];
     const relatedPosts = await Post.find({
-      category: post.category._id,
       _id: { $ne: post._id },
       $or: [
-        { status: 'published' },
-        { status: 'scheduled', scheduledFor: { $lte: now } },
+        { category: post.category._id },
+        { tags: { $in: tagIds } },
+      ],
+      $and: [
+        {
+          $or: [
+            { status: 'published' },
+            { status: 'scheduled', scheduledFor: { $lte: now } },
+          ],
+        },
       ],
     })
       .populate('category', 'name slug')

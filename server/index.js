@@ -4,6 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 const { connectDB, getStatus } = require('./config/db');
+const { startScheduler } = require('./services/scheduler');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -82,6 +83,7 @@ const PORT = process.env.PORT || 5000;
 
 // Initialize database and start HTTP server
 connectDB().then(() => {
+  startScheduler(60000);
   app.listen(PORT, () => {
     console.log(`[Server] FlyerTech Blog API running on http://localhost:${PORT}`);
   });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from './Icon';
 import './SearchBar.css';
 
@@ -8,9 +8,26 @@ export default function SearchBar({
   initialValue = '',
   size = 'md', // 'sm' | 'md' | 'lg'
   autoFocus = false,
+  liveSearch = false,
   className = '',
 }) {
   const [query, setQuery] = useState(initialValue);
+
+  // Sync internal state if initialValue changes externally
+  useEffect(() => {
+    setQuery(initialValue);
+  }, [initialValue]);
+
+  // Debounced live search
+  useEffect(() => {
+    if (!liveSearch) return;
+    const timer = setTimeout(() => {
+      if (onSearch) {
+        onSearch(query.trim());
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [query, liveSearch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
