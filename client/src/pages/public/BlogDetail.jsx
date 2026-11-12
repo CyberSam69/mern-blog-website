@@ -128,14 +128,18 @@ export default function BlogDetail() {
 
       btn.addEventListener('click', () => {
         const codeText = pre.querySelector('code')?.innerText || pre.innerText;
-        navigator.clipboard.writeText(codeText).then(() => {
-          btn.innerText = 'Copied!';
-          setCodeCopiedIndex(index);
-          setTimeout(() => {
-            btn.innerText = 'Copy';
-            setCodeCopiedIndex(null);
-          }, 2500);
-        });
+        if (navigator?.clipboard?.writeText) {
+          navigator.clipboard.writeText(codeText).then(() => {
+            btn.innerText = 'Copied!';
+            setTimeout(() => {
+              btn.innerText = 'Copy';
+            }, 2500);
+          }).catch(() => {
+            fallbackCodeCopy(codeText, btn);
+          });
+        } else {
+          fallbackCodeCopy(codeText, btn);
+        }
       });
 
       pre.appendChild(btn);
@@ -182,6 +186,23 @@ export default function BlogDetail() {
       document.body.removeChild(input);
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const fallbackCodeCopy = (text, btnElement) => {
+    try {
+      const input = document.createElement('textarea');
+      input.value = text;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+      btnElement.innerText = 'Copied!';
+      setTimeout(() => {
+        btnElement.innerText = 'Copy';
+      }, 2500);
     } catch {
       // ignore
     }

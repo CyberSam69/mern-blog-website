@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Icon from './Icon';
 import './SearchBar.css';
 
@@ -12,15 +12,20 @@ export default function SearchBar({
   className = '',
 }) {
   const [query, setQuery] = useState(initialValue);
+  const isInitialMount = useRef(true);
 
   // Sync internal state if initialValue changes externally
   useEffect(() => {
     setQuery(initialValue);
   }, [initialValue]);
 
-  // Debounced live search
+  // Debounced live search (skips initial mount)
   useEffect(() => {
     if (!liveSearch) return;
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
       if (onSearch) {
         onSearch(query.trim());

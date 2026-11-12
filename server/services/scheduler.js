@@ -7,6 +7,12 @@ let schedulerInterval = null;
  */
 const publishScheduledPosts = async () => {
   try {
+    const { getStatus } = require('../config/db');
+    if (!getStatus().connected) {
+      // Database not connected; skip check silently
+      return;
+    }
+
     const now = new Date();
     const scheduledPosts = await Post.find({
       status: 'scheduled',
