@@ -13,3 +13,4 @@ Disallow: /api/*
 
 # XML Sitemap location
 Sitemap: https://flyertech.com/sitemap.xml
+
