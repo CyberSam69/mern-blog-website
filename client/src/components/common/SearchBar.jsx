@@ -13,13 +13,15 @@ export default function SearchBar({
 }) {
   const [query, setQuery] = useState(initialValue);
   const isInitialMount = useRef(true);
+  const lastSearchedRef = useRef(initialValue);
 
   // Sync internal state if initialValue changes externally
   useEffect(() => {
     setQuery(initialValue);
+    lastSearchedRef.current = initialValue;
   }, [initialValue]);
 
-  // Debounced live search (skips initial mount)
+  // Debounced live search (skips initial mount and redundant queries)
   useEffect(() => {
     if (!liveSearch) return;
     if (isInitialMount.current) {
@@ -27,22 +29,29 @@ export default function SearchBar({
       return;
     }
     const timer = setTimeout(() => {
-      if (onSearch) {
-        onSearch(query.trim());
+      const trimmed = query.trim();
+      if (trimmed !== lastSearchedRef.current) {
+        lastSearchedRef.current = trimmed;
+        if (onSearch) {
+          onSearch(trimmed);
+        }
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [query, liveSearch]);
+  }, [query, liveSearch, onSearch]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const trimmed = query.trim();
+    lastSearchedRef.current = trimmed;
     if (onSearch) {
-      onSearch(query.trim());
+      onSearch(trimmed);
     }
   };
 
   const handleClear = () => {
     setQuery('');
+    lastSearchedRef.current = '';
     if (onSearch) {
       onSearch('');
     }

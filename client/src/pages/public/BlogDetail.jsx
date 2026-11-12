@@ -259,6 +259,15 @@ export default function BlogDetail() {
       })
     : 'Recent';
 
+  const categoryName =
+    typeof post.category === 'object' && post.category !== null
+      ? (post.category.name || 'Technology')
+      : (typeof post.category === 'string' && post.category.trim() ? post.category : 'Technology');
+  const categorySlug =
+    typeof post.category === 'object' && post.category !== null
+      ? (post.category.slug || 'technology')
+      : (typeof post.categorySlug === 'string' && post.categorySlug.trim() ? post.categorySlug : 'technology');
+
   return (
     <Layout>
       <SEO
@@ -288,7 +297,7 @@ export default function BlogDetail() {
               <span className="crumb-sep">/</span>
               <Link to="/blogs">Articles</Link>
               <span className="crumb-sep">/</span>
-              <Link to={`/blogs?category=${post.categorySlug}`}>{post.category}</Link>
+              <Link to={`/blogs?category=${categorySlug}`}>{categoryName}</Link>
               <span className="crumb-sep">/</span>
               <span className="crumb-current">{post.title}</span>
             </nav>
@@ -299,8 +308,8 @@ export default function BlogDetail() {
         <header className="article-header-section">
           <div className="container article-header-container">
             <div className="article-header-meta">
-              <Link to={`/blogs?category=${post.categorySlug}`}>
-                <Badge variant="blue" size="md">{post.category}</Badge>
+              <Link to={`/blogs?category=${categorySlug}`}>
+                <Badge variant="blue" size="md">{categoryName}</Badge>
               </Link>
               <span className="meta-item">
                 <Icon name="calendar" size={14} color="var(--text-secondary)" />

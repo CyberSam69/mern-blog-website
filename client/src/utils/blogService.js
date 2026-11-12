@@ -7,16 +7,25 @@ import { CATEGORIES } from './constants';
  */
 export const normalizePost = (post) => {
   if (!post) return null;
+  const categoryName =
+    typeof post.category === 'object' && post.category !== null
+      ? (post.category.name || 'Technology')
+      : (typeof post.category === 'string' && post.category.trim() ? post.category : 'Technology');
+  const categorySlug =
+    typeof post.category === 'object' && post.category !== null
+      ? (post.category.slug || 'technology')
+      : (typeof post.categorySlug === 'string' && post.categorySlug.trim() ? post.categorySlug : 'technology');
+
   return {
     id: post._id || post.id,
     _id: post._id || post.id,
-    title: post.title,
-    slug: post.slug,
-    excerpt: post.excerpt,
-    content: post.content,
-    featuredImage: post.featuredImage,
-    category: post.category?.name || post.category || 'General',
-    categorySlug: post.category?.slug || post.categorySlug || 'general',
+    title: post.title || '',
+    slug: post.slug || '',
+    excerpt: post.excerpt || '',
+    content: post.content || '',
+    featuredImage: post.featuredImage || 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80',
+    category: categoryName,
+    categorySlug: categorySlug,
     author: {
       name: post.author?.name || 'FlyerTech Editorial',
       role: post.author?.role || 'Staff Writer',
@@ -25,7 +34,7 @@ export const normalizePost = (post) => {
       socialLinks: post.author?.socialLinks || {},
     },
     tags: Array.isArray(post.tags)
-      ? post.tags.map((t) => (typeof t === 'object' ? t.name : t))
+      ? post.tags.map((t) => (typeof t === 'object' && t !== null ? t.name : String(t)))
       : [],
     status: post.status || 'published',
     publishedAt: post.publishedAt || post.createdAt || new Date().toISOString(),

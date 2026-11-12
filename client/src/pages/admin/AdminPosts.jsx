@@ -56,8 +56,11 @@ export default function AdminPosts() {
         return false;
       }
       // Category filter
-      if (selectedCategory !== 'all' && p.categorySlug !== selectedCategory) {
-        return false;
+      if (selectedCategory !== 'all') {
+        const catSlug = typeof p.category === 'object' && p.category !== null ? p.category.slug : (p.categorySlug || '');
+        if (catSlug !== selectedCategory) {
+          return false;
+        }
       }
       // Search
       if (searchQuery) {
@@ -227,7 +230,11 @@ export default function AdminPosts() {
                           </div>
                         </td>
                         <td>
-                          <Badge variant="blue" size="sm">{post.category}</Badge>
+                          <Badge variant="blue" size="sm">
+                            {typeof post.category === 'object' && post.category !== null
+                              ? post.category.name
+                              : (post.category || 'Technology')}
+                          </Badge>
                         </td>
                         <td>
                           <span className="author-cell-text">{post.author?.name}</span>

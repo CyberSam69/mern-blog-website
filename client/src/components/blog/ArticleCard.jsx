@@ -27,6 +27,15 @@ export default function ArticleCard({
   const authorRole = author?.role || 'Staff Writer';
   const authorAvatar = author?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
 
+  const categoryName =
+    typeof category === 'object' && category !== null
+      ? (category.name || 'Technology')
+      : (typeof category === 'string' && category.trim() ? category : 'Technology');
+  const catSlug =
+    typeof category === 'object' && category !== null
+      ? (category.slug || 'technology')
+      : (typeof categorySlug === 'string' && categorySlug.trim() ? categorySlug : 'technology');
+
   const formattedDate = publishedAt
     ? new Date(publishedAt).toLocaleDateString('en-US', {
         month: 'short',
@@ -46,8 +55,8 @@ export default function ArticleCard({
       <article className={`article-card card-compact ${className}`}>
         <div className="compact-body">
           <div className="card-meta">
-            <Link to={`/blogs?category=${categorySlug}`} className="card-category-link">
-              <Badge variant="blue" size="sm">{category}</Badge>
+            <Link to={`/blogs?category=${catSlug}`} className="card-category-link">
+              <Badge variant="blue" size="sm">{categoryName}</Badge>
             </Link>
             <span className="meta-text">{formattedDate}</span>
           </div>
@@ -83,8 +92,8 @@ export default function ArticleCard({
         </div>
         <div className="hero-content">
           <div className="card-meta">
-            <Link to={`/blogs?category=${categorySlug}`} className="card-category-link">
-              <Badge variant="blue" size="md">{category}</Badge>
+            <Link to={`/blogs?category=${catSlug}`} className="card-category-link">
+              <Badge variant="blue" size="md">{categoryName}</Badge>
             </Link>
             <span className="meta-item">
               <Icon name="calendar" size={14} color="var(--text-secondary)" />
@@ -133,8 +142,8 @@ export default function ArticleCard({
         </div>
         <div className="horizontal-content">
           <div className="card-meta">
-            <Link to={`/blogs?category=${categorySlug}`} className="card-category-link">
-              <Badge variant="blue" size="sm">{category}</Badge>
+            <Link to={`/blogs?category=${catSlug}`} className="card-category-link">
+              <Badge variant="blue" size="sm">{categoryName}</Badge>
             </Link>
             <span className="meta-text">{formattedDate}</span>
             <span className="meta-dot">•</span>
@@ -175,8 +184,8 @@ export default function ArticleCard({
 
       <div className="card-body">
         <div className="card-meta">
-          <Link to={`/blogs?category=${categorySlug}`} className="card-category-link">
-            <Badge variant="blue" size="sm">{category}</Badge>
+          <Link to={`/blogs?category=${catSlug}`} className="card-category-link">
+            <Badge variant="blue" size="sm">{categoryName}</Badge>
           </Link>
           <span className="meta-text">{formattedDate}</span>
         </div>

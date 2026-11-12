@@ -48,7 +48,8 @@ export default function Home() {
   // Filter latest articles by selected category on the home page
   const filteredLatest = articles.filter((post) => {
     if (selectedCategory === 'all') return true;
-    return post.categorySlug === selectedCategory;
+    const catSlug = typeof post.category === 'object' && post.category !== null ? post.category.slug : (post.categorySlug || '');
+    return catSlug === selectedCategory;
   });
 
   const handleSearch = (query) => {

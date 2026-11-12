@@ -160,7 +160,11 @@ export default function Dashboard() {
                           </Link>
                         </td>
                         <td>
-                          <Badge variant="blue" size="sm">{p.category}</Badge>
+                          <Badge variant="blue" size="sm">
+                            {typeof p.category === 'object' && p.category !== null
+                              ? p.category.name
+                              : (p.category || 'Technology')}
+                          </Badge>
                         </td>
                         <td className="cell-author">{p.author?.name}</td>
                         <td>
